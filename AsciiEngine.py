@@ -1,5 +1,4 @@
 import math
-from random import randrange
 """
 # pip install windows-curses automatically
 try:
@@ -12,178 +11,112 @@ import curses
 screen = curses.initscr() # initiate curses
 screenHeight, screenWidth = screen.getmaxyx()
 
-MAX_DEPTH = 10
+# decreasing this makes better image quality but lower view distance
+MAX_DEPTH = 4
 
-
-
-
-class Camera:
-    def __init__(self, posX : float, posY : float, dirX : float, dirY : float, planeX : float, planeY : float):
-        self.posX = posX
-        self.posY = posY
-        self.dirX = dirX
-        self.dirY = dirY
-        self.planeX = planeX
-        self.planeY = planeY
-
-    def Rotate(self, a : float):
-        olddirx = self.dirX
-        self.dirX = math.cos(a) * self.dirX - math.sin(a) * self.dirY
-        self.dirY = math.sin(a) * olddirx + math.cos(a) * self.dirY
-
-        oldplaneX = self.planeX
-        self.planeX = math.cos(a) * self.planeX - math.sin(a) * self.planeY
-        self.planeY = math.sin(a) * oldplaneX + math.cos(a) * self.planeY
-
-
-class Player(Camera):
-    def __init__(self, posX, posY):
-        Camera.__init__(self, posX, posY, -1, 0, 0, 0.66)
-        
-
-
-class Map:
-    def __init__(self, width, data):
-        self.data = data
-        self.width = width
-        self.height = int(len(data) / width)
-
-    def __getitem__(self, pos) -> int:
-        xi, yi = pos
-        if (0 <= xi and xi < self.width and 0 <= yi and yi < self.height):
-            return self.data[yi * self.height + xi]
-        else:
-            return -1
-
-class GradientSampler:
-    data = """$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1[]?-_+~<>i!lI;:,"^`'. """
-    def __getitem__(self, index : float) -> str:
-        return self.data[min(math.floor(abs(index * len(self.data))), len(self.data) - 1)]
+from Textures import *
+from Camera import *
+from Map import * 
 
 class Game:
-    player : Player 
-    Grad : GradientSampler
-    map : Map
+    player : Camera 
     def __init__(self):
-        global screen
-        screen.keypad(True)
-        screen.nodelay(True)
-        
-        curses.noecho()
-        curses.cbreak()
-        
-        self.player = Player(3, 3)
-        self.map = Map(9, [
-            5, 1, 1, 1, 1, 1, 1, 1, 5,
-            4, 0, 0, 0, 0, 0, 0, 0, 2,
-            4, 0, 0, 0, 0, 0, 0, 0, 2,
-            4, 0, 0, 1, 0, 0, 0, 0, 2,
-            4, 0, 0, 1, 1, 1, 0, 0, 2,
-            4, 0, 0, 1, 0, 0, 0, 0, 2,
-            4, 0, 0, 0, 0, 0, 0, 0, 2,
-            4, 0, 0, 0, 0, 0, 0, 0, 2,
-            5, 3, 3, 3, 3, 3, 3, 3, 5])
-        self.Grad = GradientSampler()
-
-
-    def CastRay(self, posX, posY, dirX, dirY) -> tuple: # return the depth, map value
-        
-        mapX = int(posX)
-        mapY = int(posY)
-
-        if dirX == 0:   deltaX = 1e30
-        else:           deltaX = abs(1 / dirX)
-        
-        if dirY == 0:   deltaY = 1e30
-        else:           deltaY = abs(1 / dirY)
-        
-        if (dirX < 0):  
-            stepX = -1
-            distX = (posX - mapX) * deltaX
-        else:
-            stepX = 1
-            distX = (mapX + 1.0 - posX) * deltaX
-        
-        if (dirY < 0):
-            stepY = -1
-            distY = (posY - mapY) * deltaY
-        else:
-            stepY = 1
-            distY = (mapY + 1.0 - posY) * deltaY
-        
-        hit = 0
-
-        # dda algorithm
-        while not hit: 
-            # jump to next map square, either in x-direction, or in y-direction
-            northsouth = distX < distY # north south edge or south west edge
-            if (northsouth):
-                distX += deltaX 
-                mapX += stepX
-            else:
-                distY += deltaY
-                mapY += stepY
-            
-            hit = self.map[mapX, mapY]      
-       
-        # calculate distance of ray(eucildean gives fish eye)
-        if northsouth:  distance = distX - deltaX
-        else:           distance = distY - deltaY
-
-        return max(distance, 1e-16), hit
+        self.closed = False
+        self.cam = Camera(2, 2, -1, 0) # posx, posy, dirx, diry, planex, planey
+        self.map = Map("test")
 
     def Render(self):
+        """
+        draws the to the terminal
+        """
         screen.clear()
 
         for x in range(screenWidth):
-            cameraX = 2.0 * x / float(screenWidth) - 1
-            rayDirX = self.player.dirX + self.player.planeX * cameraX
-            rayDirY = self.player.dirY + self.player.planeY * cameraX
+            cameraX = x / float(screenWidth) * 2 - 1
+            ray = Ray(self.cam.posX, self.cam.posY, 
+                        self.cam.dirX + self.cam.planeX * cameraX, 
+                        self.cam.dirY + self.cam.planeY * cameraX) 
 
-            raydepth, mapvalue = self.CastRay(self.player.posX, self.player.posY, rayDirX, rayDirY)
+            while True:
+                mapx, mapy = ray.Step()             # iterate along line
+                mapvalue = self.map.at(mapx, mapy)
+                if (mapvalue != 0):  # if collision with wall
+                    break                           
+
+            raydepth, wallx = ray.IntersectData()   # get intersect data
+
+            lineheight = int(screenHeight / raydepth)   # '//' is an integer division and '/' is a float division
+            start = (screenHeight - lineheight) // 2    # adds half the lineheight from the screen height to find the start
+            end =   (screenHeight + lineheight) // 2    # subtracts half the line height from half the screen height to find the end
             
-            for y in range(
-                int(max((screenHeight - int(screenHeight / raydepth)) / 2, 0)), 
-                int(min((screenHeight + int(screenHeight / raydepth)) / 2, screenHeight - 1))):
-                
-                screen.addch(y, x, ord(self.Grad[raydepth / MAX_DEPTH]))
+            for y in range(max(start, 0), min(end, screenHeight - 1)):   
+                wally =  (y - start) / lineheight       # gets the ypos in the wall texture 
+                screen.addch(y, x, GradientTexture[raydepth * Textures[mapvalue][wallx, wally] / MAX_DEPTH])
 
-        screen.addstr(0, 0, str(self.player.posX) + ", " + str(self.player.posY))
-        screen.addstr(1, 0, str(self.player.dirX) + ", " + str(self.player.dirY))
-
-    
     def HandleInputs(self):
-        ch = screen.getch()
+        """
+        gets the inputs and handles them appropriately
+        """
+        event = screen.getch() # refreshes the screen
 
-        if ch == ord('q'):
-            self.player.Rotate(0.05)
-        elif ch == ord('e'):
-            self.player.Rotate(-0.05)
+        # -----------------------------Window events-------------------------------#
+        # curses events arent mutually excusive with char keys char 
+        # # keys = [0... 255]
+        # curses = [256...  ]
+        if event == curses.KEY_EXIT or event == ord('p'): 
+            self.closed = True
         
-        elif ch == ord('w'):
-            self.player.posX += self.player.dirX * 0.05
-            self.player.posY += self.player.dirY * 0.05
-        elif ch == ord('s'):
-            self.player.posX -= self.player.dirX * 0.05
-            self.player.posY -= self.player.dirY * 0.05
-        
-        elif ch == ord('a'):
-            self.player.posX -= self.player.dirY * 0.05
-            self.player.posY += self.player.dirX * 0.05
-        elif ch == ord('d'):
-            self.player.posX += self.player.dirY * 0.05
-            self.player.posY -= self.player.dirX * 0.05
+        if event == curses.KEY_RESIZE:
+            # update screen height and width on terminal resize
+            global screenHeight, screenWidth                
+            screenHeight, screenWidth = screen.getmaxyx()
 
+
+
+        # -----------------------------Movement events-----------------------------#
+        if event == ord('q'):
+            self.cam.Rotate(0.05)
         
-    def main(self, value): 
-        while True:
-            self.HandleInputs()
+        elif event == ord('e'):
+            self.cam.Rotate(-0.05)
+        
+        elif event == ord('w'): # move forwards
+            self.cam.MoveForward(0.05)
+            if (self.map.at(int(self.cam.posX), int(self.cam.posY)) != 0):
+                 self.cam.MoveForward(-0.05) # backwards
+
+        elif event == ord('s'): # move backwards
+            self.cam.MoveForward(-0.05)
+            if (self.map.at(int(self.cam.posX), int(self.cam.posY)) != 0):
+                 self.cam.MoveForward(0.05)
+
+        elif event == ord('a'): # move left
+            self.cam.MoveNormal(0.05)
+            if (self.map.at(int(self.cam.posX), int(self.cam.posY)) != 0):
+                self.cam.MoveNormal(-0.05)
+        
+        elif event == ord('d'): # move right
+            self.cam.MoveNormal(-0.05)
+            if (self.map.at(int(self.cam.posX), int(self.cam.posY)) != 0):
+                self.cam.MoveNormal(0.05)
+
+    def main(self, _screen):
+        """
+        call with curses.wrapper(<this object>.main). sets up the terminal for curses to use and undoes it all when its finished
+        """
+        global screen
+        screen.keypad(True)
+        screen.nodelay(True)
+        screen.timeout(0)
+        
+        curses.noecho()
+        curses.cbreak()
+        curses.curs_set(0)
+        while not self.closed:
             self.Render()
+            self.HandleInputs()
+
     
-    def Play(self):
-        curses.wrapper(self.main)
-
-game = Game()
-game.Play()
-
-print("!!!")
+if __name__ == "__main__":
+    game = Game()
+    curses.wrapper(game.main)
