@@ -1,5 +1,4 @@
-import math
-"""
+""" add on export
 # pip install windows-curses automatically
 try:
     from pip._internal import main as _pip_main
@@ -28,11 +27,17 @@ class ColorPallete(Sampler3D):
         for i in range(16, 232): # creates a buffer of the html color pallet
             curses.init_pair(i, curses.COLOR_BLACK, i) 
             buffer.append(i)
-        
-        buffer[0] = 234 # sets black to slightly not black
 
         Sampler3D.__init__(self, 6, 6, 6, buffer)
 
+        for z in range(6):
+                for y in range(6):
+                    for x in range(6):
+                        id = self.at(x, y, z)
+                        screen.addstr(y, x * 3 + z * 6 * 3 + 1, str(id), curses.color_pair(id))
+        screen.refresh()
+        return
+        
 class ColorRamp(Sampler1D):
     def __init__(self, accuracy = 1):
         buffer = []
@@ -43,11 +48,9 @@ class ColorRamp(Sampler1D):
         for i in range(233, 256, int(1 / accuracy)): # creates a buffer of the html color pallet
             curses.init_pair(i, curses.COLOR_BLACK, i) 
             buffer.append(i)
-        
-        buffer[0] = 234 # sets black to slightly not black
 
         Sampler1D.__init__(self, buffer)
-    
+
 class Game:
     
     def __init__(self):
@@ -57,28 +60,29 @@ class Game:
 
     def Render_with_texture(self):
         """
-        draws the to the terminal
+        draws the to the terminal with textured walls
         """
         screen.clear()
 
         for x in range(screenWidth):
-            raycast = Ray(self.cam.posX, self.cam.posY,                       # send a ray, from player position
-                        self.cam.dirX + self.cam.planeX * x / screenWidth,    # rotate ray by value through in camera plane 
-                        self.cam.dirY + self.cam.planeY * x / screenWidth) 
+            raycast = Ray(self.cam.posX, self.cam.posY,                                 # send a ray, from player position
+                        self.cam.dirX + (self.cam.planeX * (2 * x / screenWidth - 1)),  # rotate ray relative to screen x position
+                        self.cam.dirY + (self.cam.planeY * (2 * x / screenWidth - 1))) 
 
             while True:
                 mapx, mapy = raycast.Step()             # iterate along line
-                if not self.map.inrange(mapx, mapy):    # if not in range, return big depth
+                
+                # if ray outside of map -> should never happen if map is enclosed
+                """if not self.map.inrange(mapx, mapy):    # if not in range, return big depth
                     mapvalue = 0        # collision with 0
                     raydepth = 1e30     # shortish                    
                     tex_u = 0
-                    break
-
+                    break"""
+                
                 mapvalue = self.map.at(mapx, mapy)
-                if (mapvalue != 0):                             # if collision with wall
+                if (mapvalue > 0):                              # if collision with wall
                     raydepth, tex_u = raycast.IntersectData()   # get intersect data
-                    break
-                    
+                    break                    
 
             lineheight = int(screenHeight / raydepth)   # '//' is an integer division and '/' is a float division
             start = (screenHeight - lineheight) // 2    # adds half the lineheight from the screen height to find the start
@@ -87,27 +91,30 @@ class Game:
             raydepth = 1 - (raydepth / MAX_DEPTH) # relative raydepth
 
             for y in range(max(start, 0), min(end, screenHeight - 1)): # makes sure start and end is within the range of the screen
-                screen.addch(y, x, ord(' '), curses.color_pair(ColourTextures[mapvalue][tex_u, (y - start) / lineheight]))
+                tex_v = (y - start) / lineheight
+                screen.addch(y, x, ord(' '), curses.color_pair(BrickWallTexture[tex_u, tex_v]))
 
-
-
-
-    def Render_with_color(self):
+    def Render_with_depth(self):
+        """
+        Draws to the terminal with the distance from the camera to the wall
+        """
         screen.clear()
 
         for x in range(screenWidth):
-            raycast = Ray(self.cam.posX, self.cam.posY,                             # send a ray, from player position
-                        self.cam.dirX + self.cam.planeX * (x / screenWidth - 1),    # rotate ray relative to screen x position
-                        self.cam.dirY + self.cam.planeY * (x / screenWidth - 1)) 
+            raycast = Ray(self.cam.posX, self.cam.posY,                                 # send a ray, from player position
+                        self.cam.dirX + self.cam.planeX * (2 * x / screenWidth - 1),    # rotate ray relative to screen x position
+                        self.cam.dirY + self.cam.planeY * (2 * x / screenWidth - 1)) 
 
             while True:
                 mapx, mapy = raycast.Step()             # iterate along line
-                if not self.map.inrange(mapx, mapy):    # if not in range, return big depth
+
+                # if ray outside of map -> should never happen if map is enclosed
+                """if not self.map.inrange(mapx, mapy):    # if not in range, return big depth
                     raydepth = 1e30
-                    break
+                    break"""
 
                 mapvalue = self.map.at(mapx, mapy)
-                if (mapvalue != 0):                     # if collision with wall
+                if (mapvalue > 0):                      # if collision with wall
                     raydepth = raycast.IntersectDepth() # get intersect data
                     break
                     
@@ -118,7 +125,7 @@ class Game:
             raydepth = 1 - (raydepth / MAX_DEPTH) # relative raydepth
 
             for y in range(max(start, 0), min(end, screenHeight - 1)):
-                screen.addch(y, x, ord(' '), curses.color_pair(self.colors[raydepth, raydepth, raydepth]))
+                screen.addch(y, x, ord(' '), curses.color_pair(self.colors[raydepth]))
 
     #def DrawPixel(self, x, y, char, r, g, b): 
 
@@ -129,7 +136,7 @@ class Game:
         event = screen.getch() # refreshes the screen
 
         # -----------------------------Window events-------------------------------#
-        if event == curses.KEY_EXIT: 
+        if event == ord('p') or event == curses.KEY_EXIT: 
             self.closed = True
         
         if event == curses.KEY_RESIZE:
@@ -142,6 +149,9 @@ class Game:
 
 
         # -----------------------------Movement events-----------------------------#
+        
+        
+        
         if event == ord('q'):
             self.cam.Rotate(0.05)
         
@@ -176,10 +186,7 @@ class Game:
             if (not self.map.inrange(mapx, mapy) or self.map.at(mapx, mapy) != 0):
                 self.cam.MoveNormal(0.05)
 
-    def main(self, _screen):
-        """
-        call with 'curses.wrapper(<this object>.main)'. sets up the terminal for curses to use and undoes it all when its finished.
-        """
+    def SetupCurses():
         global screen
         screen.keypad(True)
         screen.nodelay(True)
@@ -189,15 +196,42 @@ class Game:
         curses.cbreak()
         curses.curs_set(0)
         
+
+    def main_textured(self, _screen):
+        """
+        call with 'curses.wrapper(<this object>.main)'. sets up the terminal for curses to use and undoes it all when its finished.
+        """
+        Game.SetupCurses()
         # self.colors = ColorRamp(0.5) # 1 dimensional greyscale
         self.colors = ColorPallete() # rgb colors
 
         while not self.closed:           
-            # self.Render_with_color()
             self.Render_with_texture()
             self.HandleInputs()
+    
+    def main_depth(self, _screen):
+
+        Game.SetupCurses()
+        # self.colors = ColorRamp(0.5) # 1 dimensional greyscale
+        self.colors = ColorRamp(0.5) # rgb colors
+
+        while not self.closed:           
+            self.Render_with_depth()
+            self.HandleInputs()
+
 
     
 if __name__ == "__main__":
     game = Game()
-    curses.wrapper(game.main)
+    curses.wrapper(game.main_textured)
+    screen.refresh()
+
+
+
+
+
+"""
+1>python -m cProfile -o <file>.profile AsciiEngine.py
+2>python -m pstats <file>.profile
+3>pstats <function name>
+"""
