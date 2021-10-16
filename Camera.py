@@ -8,7 +8,7 @@ class Camera:
         self.dirX = dirX
         self.dirY = dirY
         self.planeX = 0.0
-        self.planeY = 0.66
+        self.planeY = 1.32
         self.Rotate(rotation)
 
     def Rotate(self, angle : float):
