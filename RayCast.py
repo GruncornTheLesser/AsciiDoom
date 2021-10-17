@@ -1,13 +1,14 @@
-class Ray:
+class RayCast:
     """
     A projection from a point along a direction vector.
     Used to find the collisions in an axis aligned grid.
     """
     # an enum -> this is how your supposed to do it apparently??? 
     class __WallSide: 
-        Undetermined = 0    # the ray has not yet traveled through a wall
-        EW = 1              # the ray last traveled through an east facing or west facing wall
-        NS = 2              # the ray last traveled through a north facing or south facing wall
+        EW = 1              
+        """the ray last traveled through an east facing or west facing gridline"""
+        NS = 2  
+        """the ray last traveled through a north facing or south facing gridline"""            
     
     def __init__(self, posX, posY, dirX, dirY):
         # the '__' is how you do encapsulation
@@ -39,7 +40,7 @@ class Ray:
             self.stepY = 1
             self.__distY = (self.__mapY + 1.0 - posY) * self.__deltaY
 
-        self.__Wall = Ray.__WallSide.Undetermined
+        self.__Wall = 0
         
 
     def Step(self):
@@ -47,17 +48,17 @@ class Ray:
         iterate along line. uses a dda algorithm to ensure no tiles are missed.\n
         returns the coordinates of thenext tile the ray travels through.
         """
-        if (self.__distX < self.__distY):     # north south edge
+        if (self.__distX < self.__distY):   # north south edge
             self.__mapX += self.__stepX     # hop left or right
             self.__distX += self.__deltaX   # accumulate x distance
 
-            self.__Wall = Ray.__WallSide.NS
+            self.__Wall = RayCast.__WallSide.NS
         
         else:                               # south west edge
             self.__mapY += self.stepY       # hop up or down
-            self.__distY += self.__deltaY     # accumulate Y distance 
+            self.__distY += self.__deltaY   # accumulate Y distance 
 
-            self.__Wall = Ray.__WallSide.EW
+            self.__Wall = RayCast.__WallSide.EW
 
         return (self.__mapX, self.__mapY)
 
@@ -65,13 +66,13 @@ class Ray:
         """
         returns the depth and relative x value along the wall from the last intersection with the grid
         """
-        if self.__Wall == Ray.__WallSide.NS:  # north south side
+        if self.__Wall == RayCast.__WallSide.NS:                # north south side
             depth = max(self.__distX - self.__deltaX, 1e-16)    # non euclidean distance avoids fish eye effect  
             wallx = self.__posY - self.__mapY + depth * self.__dirY
             
-            if (self.__dirX > 0): wallx = 1 - wallx             # file the texture to maintain the orientation
+            if (self.__dirX > 0): wallx = 1 - wallx             # maintains the texture orientation
                 
-        elif self.__Wall == Ray.__WallSide.EW: # east west side               
+        elif self.__Wall == RayCast.__WallSide.EW:              # east west side               
             depth = max(self.__distY - self.__deltaY, 1e-16)
             wallx = self.__posX - self.__mapX + depth * self.__dirX
             
@@ -83,16 +84,16 @@ class Ray:
         """
         returns the depth from the starting point and last intersection with the grid
         """
-        if self.__Wall == Ray.__WallSide.NS:    
+        if self.__Wall == RayCast.__WallSide.NS:    
             return max(self.__distX - self.__deltaX, 1e-16)
         else:                                   
             return max(self.__distY - self.__deltaY, 1e-16)
 
     def IntersectTexPos(self):
         """
-        returns the texture position from intersection with the grid
+        returns the texture position from intersection with the grid, this requires calculating depth but 
         """
-        if self.__Wall == Ray.__WallSide.NS:
+        if self.__Wall == RayCast.__WallSide.NS:
             depth = max(self.__distX - self.__deltaX, 1e-16)
             if (self.__dirX > 0):   
                 return 1 - (self.__posY - self.__mapY + depth * self.__dirY)
