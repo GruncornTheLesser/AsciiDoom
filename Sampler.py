@@ -1,5 +1,14 @@
-import math
 
+
+
+
+"""
+try:
+    from pip._internal import main as _pip_main
+except ImportError:
+    from pip import main as _pip_main
+_pip_main(["install", "pillow"])
+"""
 class Sampler3D:
     """a 3D collection that can be index with a normalized x, y and z"""
     def __init__(self, width : int, height : int, depth : int, buffer : list):
@@ -69,63 +78,3 @@ class Sampler1D:
 
     def inrange(self, xi : int) -> bool:
         return  0 <= xi and xi < self.width
-
-
-class Colour:
-    def __init__(self, r, g, b):
-        self.r = r
-        self.g = g
-        self.b = b
-
-    def FromID(ID): 
-        """python doesnt allow multiple constructors so this'll do"""
-        ID -= 16        # 0-216
-        r = ID // 36     
-        ID -= r * 36    # 0-36
-        g = ID // 6
-        ID -= g * 6     # 0-6
-        b = ID
-        return Colour(r, g, b)
-
-    def __iadd__(self, other): 
-        return Colour(self.r + other.r, self.g + other.g, self.b + other.b)
-    def __isub__(self, other):
-        return Colour(self.r - other.r, self.g - other.g, self.b - other.b)
-    def __imul__(self, other):
-        return Colour(self.r * other, self.g * other, self.b * other)
-    def __ifloordiv__(self, other):
-        r = self.r // other
-        g = self.g // other
-        b = self.b // other
-        return Colour(r, g, b)
-
-
-    def getID(self) -> int:
-        return 16 + self.r * 36 + self.g * 6 + self.b
-
-        
-
-class Texture(Sampler1D):
-    """A collection of sampler2Ds at different levels of detail"""
-    def __init__(self, buffer):
-        Sampler1D.__init__(self, buffer)
-
-    def GenFrom(width, height, mipmap, buffer):        
-        sampler_buffer = [Sampler2D(width, height, buffer)]
-        for i in range(1, mipmap):
-            sampler_w = width >> i
-            sampler_h = height >> i
-            buffer = []
-            for y in range(sampler_h): # left shift divide by 2^i
-                for x in range(sampler_w):
-                    col =  Colour.FromID(sampler_buffer[i - 1][x * 2, y * 2])
-                    col += Colour.FromID(sampler_buffer[i - 1][x * 2 + 1, y * 2])
-                    col += Colour.FromID(sampler_buffer[i - 1][x * 2, y * 2 + 1])
-                    col += Colour.FromID(sampler_buffer[i - 1][x * 2 + 1, y * 2 + 1])
-                    col //= 4   # average colours together
-                    buffer.append(col.getID())
-                    
-            sampler_buffer.append(Sampler2D(sampler_w, sampler_h, buffer))
-        sampler_buffer.reverse()
-        return Texture(sampler_buffer)
-        
