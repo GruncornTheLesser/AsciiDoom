@@ -13,12 +13,12 @@ except ImportError:
     from pip import main as _pip_main
 _pip_main(["install", "windows-curses"])
 """
-
 import curses
 
 class Screen:
-    scr = curses.initscr() # initiate curses
+    
     def init(): # singleton
+        Screen.scr = curses.initscr() # initiate curses
         Screen.Height, Screen.Width = Screen.scr.getmaxyx()
         Screen.scr.keypad(True)
         Screen.scr.nodelay(True)
@@ -40,5 +40,8 @@ class Screen:
 
     def SetPixel(x, y, color_pair):
         Screen.scr.addch(y, x, ord(' '), color_pair)
+
+    def RunProgram(main):
+        curses.wrapper(main)
 
 

@@ -1,7 +1,7 @@
-from Screen import Screen
+import curses
+from Screen import Screen, curses
 from Sampler import Sampler1D
 from RayCast import RayCast
-from curses import init_pair, color_pair
 MAX_DEPTH = 4
 
 class ColorRamp(Sampler1D):
@@ -18,16 +18,14 @@ class ColorRamp(Sampler1D):
         # skips absolute black -> it was very dark
         # there are three blacks that defined by this encoding: 0, 16, 232 -> why?
         for color_id in range(232 + 1, 256, int(1 / precision)): # creates a buffer of the html color pallet
-            init_pair(color_id, 0, color_id)                     # creates a pairs of black text and the background colour
+            curses.init_pair(color_id, 0, color_id)                     # creates a pairs of black text and the background colour
             buffer.append(color_id)
 
         Sampler1D.__init__(self, buffer)
 
 class Renderer:
-
     def init(): # singleton
         Renderer.Color_Ramp = ColorRamp(0.5) # requires curses to be setup
-
 
     def Render(cam, map): 
         """
@@ -48,4 +46,4 @@ class Renderer:
             lineheight = int(Screen.Height / raydepth)
             for y in range(max((Screen.Height - lineheight) // 2, 0),                   # start = middle minus half line height
                            min((Screen.Height + lineheight) // 2, Screen.Height - 1)):  # end   = middle plus half line height
-                Screen.scr.addch(y, x, ord(' '), color_pair(Renderer.Color_Ramp.at(1 - (raydepth / MAX_DEPTH))))
+                Screen.scr.addch(y, x, ord(' '), curses.color_pair(Renderer.Color_Ramp.at(1 - (raydepth / MAX_DEPTH))))
