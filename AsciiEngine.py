@@ -25,41 +25,42 @@ class Game:
         gets the inputs and handles them appropriately
         """
         event = screen.getch() # refreshes the screen
+        while (event != -1):
+            if event == ord('q'):
+                self.cam.Rotate(0.05)
+            
+            elif event == ord('e'):
+                self.cam.Rotate(-0.05)
+            
+            elif event == ord('w'): # move forwards
+                self.cam.MoveForward(0.05)
+                mapx = int(self.cam.posX)
+                mapy = int(self.cam.posY)
+                if (not self.map.inrange(mapx, mapy) or self.map[mapx, mapy] != 0):
+                    self.cam.MoveForward(-0.05) # backwards
 
-        # -----------------------------Movement events-----------------------------#
-        if event == ord('q'):
-            self.cam.Rotate(0.05)
-        
-        elif event == ord('e'):
-            self.cam.Rotate(-0.05)
-        
-        elif event == ord('w'): # move forwards
-            self.cam.MoveForward(0.05)
-            mapx = int(self.cam.posX)
-            mapy = int(self.cam.posY)
-            if (not self.map.inrange(mapx, mapy) or self.map[mapx, mapy] != 0):
-                 self.cam.MoveForward(-0.05) # backwards
+            elif event == ord('s'): # move backwards
+                self.cam.MoveForward(-0.05)
+                mapx = int(self.cam.posX)
+                mapy = int(self.cam.posY)
+                if (not self.map.inrange(mapx, mapy) or self.map[mapx, mapy] != 0):
+                    self.cam.MoveForward(0.05)
 
-        elif event == ord('s'): # move backwards
-            self.cam.MoveForward(-0.05)
-            mapx = int(self.cam.posX)
-            mapy = int(self.cam.posY)
-            if (not self.map.inrange(mapx, mapy) or self.map[mapx, mapy] != 0):
-                 self.cam.MoveForward(0.05)
-
-        elif event == ord('a'): # move left
-            self.cam.MoveNormal(0.05)
-            mapx = int(self.cam.posX)
-            mapy = int(self.cam.posY)
-            if (not self.map.inrange(mapx, mapy) or self.map[mapx, mapy] != 0):
-                self.cam.MoveNormal(-0.05)
-        
-        elif event == ord('d'): # move right
-            self.cam.MoveNormal(-0.05)
-            mapx = int(self.cam.posX)
-            mapy = int(self.cam.posY)
-            if (not self.map.inrange(mapx, mapy) or self.map[mapx, mapy] != 0):
+            elif event == ord('a'): # move left
                 self.cam.MoveNormal(0.05)
+                mapx = int(self.cam.posX)
+                mapy = int(self.cam.posY)
+                if (not self.map.inrange(mapx, mapy) or self.map[mapx, mapy] != 0):
+                    self.cam.MoveNormal(-0.05)
+            
+            elif event == ord('d'): # move right
+                self.cam.MoveNormal(-0.05)
+                mapx = int(self.cam.posX)
+                mapy = int(self.cam.posY)
+                if (not self.map.inrange(mapx, mapy) or self.map[mapx, mapy] != 0):
+                    self.cam.MoveNormal(0.05)
+            
+            event = screen.getch()
 
     def main_depth(self, screen):
         Screen.init()

@@ -9,7 +9,7 @@ from Textures import *
 from Sampler import Sampler3D
 
 
-MAX_DEPTH = 4
+MAX_DEPTH = 6
 
 
 class ColorPallete(Sampler3D):

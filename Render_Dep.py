@@ -2,7 +2,7 @@ from Screen import Screen
 from Sampler import Sampler1D
 from RayCast import RayCast
 from curses import init_pair, color_pair
-MAX_DEPTH = 5
+MAX_DEPTH = 4
 
 class ColorRamp(Sampler1D):
     def __init__(self, precision = 1):
