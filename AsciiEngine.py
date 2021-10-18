@@ -1,4 +1,4 @@
-from Render_Tex import Renderer, Screen
+from Render_Dep import Renderer, Screen
 from Camera import Camera
 from Map import Map
 

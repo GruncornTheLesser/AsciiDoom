@@ -43,7 +43,10 @@ class Renderer:
                     raydepth = raycast.IntersectDepth() # get intersect data
                     break                               
 
-            lineheight = int(Screen.Height / raydepth)
-            for y in range(max((Screen.Height - lineheight) // 2, 0),                   # start = middle minus half line height
-                           min((Screen.Height + lineheight) // 2, Screen.Height - 1)):  # end   = middle plus half line height
+            lineheight = int(Screen.Height / raydepth) * 5                  # line height relative to the screens height
+            start = int(Screen.Height // 2 - lineheight * (cam.height))     # start = middle minus half line height
+            end   = int(Screen.Height // 2 + lineheight * (1 - cam.height)) # end   = middle plus half line height
+            raydepth = (raydepth / MAX_DEPTH)
+            
+            for y in range(max(start, 0), min(end, Screen.Height - 1)):
                 Screen.scr.addch(y, x, ord(' '), curses.color_pair(Renderer.Color_Ramp.at_normalized(1 - (raydepth / MAX_DEPTH))))

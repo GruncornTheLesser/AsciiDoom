@@ -53,7 +53,7 @@ class Renderer:
                     raydepth, tex_u = raycast.IntersectData()   # get intersect data
                     break
 
-            lineheight = int(Screen.Height / raydepth)                      # line height relative to the screens height
+            lineheight = int(Screen.Height / raydepth) * 5                  # line height relative to the screens height
             start = int(Screen.Height // 2 - lineheight * (cam.height))     # start = middle minus half line height
             end   = int(Screen.Height // 2 + lineheight * (1 - cam.height)) # end   = middle plus half line height
             raydepth = (raydepth / MAX_DEPTH)                               # normalized raydepth 0-1
