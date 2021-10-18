@@ -18,7 +18,15 @@ import curses
 class Screen:
     
     def init(): # singleton
-        Screen.scr = curses.initscr() # initiate curses
+        try:
+            Screen.scr = curses.initscr() # initiate curses
+        except AttributeError as e:
+            print("""you are probably trying to run this code from IDLE or similar. python is weird. try running it directly or in vscode??? vscode works for me. you can also try running it from cmd. This is the Error: """)
+            print(e)
+            print("""its are trying to access a attribute on stdout which is a none type. why is it a none type??? who can know. not me thats for sure""")
+            input()
+            exit()
+
         Screen.Height, Screen.Width = Screen.scr.getmaxyx()
         Screen.scr.keypad(True)
         Screen.scr.nodelay(True)

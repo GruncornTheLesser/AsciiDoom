@@ -1,12 +1,13 @@
 from math import sin, cos
 
 class Camera:
-    def __init__(self, posX : float, posY : float, dirX : float, dirY : float, rotation = 0):
+    def __init__(self, posX : float, posY : float, dirX : float, dirY : float, rotation = 0, height = 0.5):
 
         self.posX = posX
         self.posY = posY
         self.dirX = dirX
         self.dirY = dirY
+        self.height = 0.5
         self.planeX = 0.0
         self.planeY = 0.66
         self.Rotate(rotation)

@@ -9,20 +9,15 @@ class Game:
         self.map = Map("test")
 
     def HandleInputs(self, screen):
-        """
-        gets the inputs and handles them appropriately
-        """
+        """gets the inputs and handles them appropriately"""
         
-        # a real programming language wouldve let me assign in the while loop and it wouldve looked much nicer
-        # while (event = screen.getch()) { /*do stuff with event*/}
-        # just saying
-
         event = screen.getch()  # dequeues an event from the queue 
         while (event != -1):    # while there are events to dequeue
-            if event == ord('q'):
+            
+            if event == ord('q'):   # rotate right
                 self.cam.Rotate(0.05)
             
-            elif event == ord('e'):
+            elif event == ord('e'): # rotate left
                 self.cam.Rotate(-0.05)
             
             elif event == ord('w'): # move forwards
@@ -44,11 +39,15 @@ class Game:
                 self.cam.MoveNormal(-0.05)
                 if (self.map[int(self.cam.posX), int(self.cam.posY)] != 0):
                     self.cam.MoveNormal(0.05)
+            elif event == ord('g'):
+                self.cam.height += 0.05
+            elif event == ord('b'):
+                self.cam.height -= 0.05
             
             event = screen.getch() # dequeue the next event
 
     def main(self, screen):
-        Renderer.init() # render requires screen to be initiated
+        Renderer.init() # renderer is a singleton, it so it only needs to be intiated once and itll draw into the terminal
         while not self.closed:
             self.HandleInputs(screen)
             Renderer.Render(self.cam, self.map)

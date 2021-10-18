@@ -46,4 +46,4 @@ class Renderer:
             lineheight = int(Screen.Height / raydepth)
             for y in range(max((Screen.Height - lineheight) // 2, 0),                   # start = middle minus half line height
                            min((Screen.Height + lineheight) // 2, Screen.Height - 1)):  # end   = middle plus half line height
-                Screen.scr.addch(y, x, ord(' '), curses.color_pair(Renderer.Color_Ramp.at(1 - (raydepth / MAX_DEPTH))))
+                Screen.scr.addch(y, x, ord(' '), curses.color_pair(Renderer.Color_Ramp.at_normalized(1 - (raydepth / MAX_DEPTH))))
