@@ -1,13 +1,13 @@
 from math import sin, cos
 
 class Camera:
-    def __init__(self, posX : float, posY : float, dirX : float, dirY : float, rotation = 0, height = 0.5):
+    def __init__(self, posX : float, posY : float, posZ : float, rotation = 0):
 
         self.posX = posX
         self.posY = posY
-        self.dirX = dirX
-        self.dirY = dirY
-        self.height = 0.5
+        self.posZ = posZ
+        self.dirX = -1
+        self.dirY = 0
         self.planeX = 0.0
         self.planeY = 0.66
         self.Rotate(rotation)
@@ -26,7 +26,9 @@ class Camera:
 
     def MoveForward(self, magnitude : float):
         """
-        moves the position forward by 'magnitude'. can use negative 'magnitude' to get backwards.
+        moves the position forward by 'magnitude'. 
+        a positive 'magnitude' results in a movement forwards.\n
+        a negative 'magnitude' results in a movement backwards.
         """
         self.posX += self.dirX * magnitude # posx += dirx
         self.posY += self.dirY * magnitude # posy += diry

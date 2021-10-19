@@ -1,67 +1,34 @@
-from Render_Dep import Renderer, Screen
+from WrapperPygame import Window, Texture, HandleInputs
+from Render_Tex import Render
 from Camera import Camera
 from Map import Map
 
-class Game:
+class Game(Window):
+    Textures = [
+        Texture.Load('Textures/tex_a.png', 3), 
+        Texture.Load('Textures/tex_b.png', 2),
+        Texture.Load('Textures/tex_c.png', 2),
+        Texture.Load('Textures/tex_d.png', 2),
+        Texture.Load('Textures/tex_e.png', 2),
+        Texture.Load('Textures/tex_metal_2.png', 2)]
+
     def __init__(self):
+        Window.__init__(self)
         self.closed = False
-        self.cam = Camera(2, 2, -1, 0) # posx, posy, dirx, diry, planex, planey
+        self.cam = Camera(2, 2, 0.5) # posx, posy, dirx, diry, planex, planey
         self.map = Map("test")
+   
+    def main(self, screen = None):
+        Window.main(self, screen)
 
-    def HandleInputs(self, screen):
-        """gets the inputs and handles them appropriately"""
-        
-        event = screen.getch()  # dequeues an event from the queue 
-        while (event != -1):    # while there are events to dequeue
-            
-            if event == ord('q'):   # rotate right
-                self.cam.Rotate(0.05)
-            
-            elif event == ord('e'): # rotate left
-                self.cam.Rotate(-0.05)
-            
-            elif event == ord('w'): # move forwards
-                self.cam.MoveForward(0.05)
-                if (self.map[int(self.cam.posX), int(self.cam.posY)] != 0):
-                    self.cam.MoveForward(-0.05) # backwards
-
-            elif event == ord('s'): # move backwards
-                self.cam.MoveForward(-0.05)
-                if (self.map[int(self.cam.posX), int(self.cam.posY)] != 0):
-                    self.cam.MoveForward(0.05)
-
-            elif event == ord('a'): # move left
-                self.cam.MoveNormal(0.05)
-                if (self.map[int(self.cam.posX), int(self.cam.posY)] != 0):
-                    self.cam.MoveNormal(-0.05)
-            
-            elif event == ord('d'): # move right
-                self.cam.MoveNormal(-0.05)
-                if (self.map[int(self.cam.posX), int(self.cam.posY)] != 0):
-                    self.cam.MoveNormal(0.05)
-            elif event == ord('g'):
-                self.cam.height += 0.05
-            elif event == ord('b'):
-                self.cam.height -= 0.05
-            
-            event = screen.getch() # dequeue the next event
-
-    def main(self, screen):
-        Renderer.init() # renderer is a singleton, it so it only needs to be intiated once and itll draw into the terminal
         while not self.closed:
-            self.HandleInputs(screen)
-            Renderer.Render(self.cam, self.map)
-        
-        Screen.terminate()
+            delta = Render(self, self.cam, self.map)
+            HandleInputs(self, delta)
+            
+
     
 if __name__ == "__main__":
     game = Game()
-    Screen.init()
-    Screen.RunProgram(game.main)
+    game.Run()
 
 
-"""
-1>python -m cProfile -o <file>.profile AsciiEngine.py
-2>python -m pstats <file>.profile
-3>pstats <function name>
-"""
