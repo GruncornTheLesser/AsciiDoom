@@ -81,13 +81,13 @@ class RayCast:
         returns the depth and relative x value along the wall from the last intersection with the grid
         """
         if self.__Wall == RayCast.__WallSide.NS:                # north south side
-            depth = max(self.__distX - self.__deltaX, 1e-16)    # non euclidean distance avoids fish eye effect  
+            depth = self.__distX - self.__deltaX    # non euclidean distance avoids fish eye effect  
             wallx = self.__posY - self.__mapY + depth * self.__dirY
             
             if (self.__dirX > 0): wallx = 1 - wallx             # maintains the texture orientation
                 
         elif self.__Wall == RayCast.__WallSide.EW:              # east west side               
-            depth = max(self.__distY - self.__deltaY, 1e-16)
+            depth = self.__distY - self.__deltaY
             wallx = self.__posX - self.__mapX + depth * self.__dirX
             
             if (self.__dirY < 0): wallx = 1 - wallx
@@ -113,9 +113,17 @@ class RayCast:
                 return self.__posY - self.__mapY + depth * self.__dirY
 
         else: 
-            depth = max(self.__distY - self.__deltaY, 1e-16)     
+            depth = max(self.__distY - self.__deltaY, 1e-16)
             if (self.__dirX > 0):   
-                return 1 - (self.__posX - self.__mapX + depth * self.__dirX)
+                return 1 - (self.__posX + depth * self.__dirX - self.__mapX)
             else:                   
-                return self.__posX - self.__mapX + depth * self.__dirX                                
+                return self.__posX + depth * self.__dirX - self.__mapX
+
+
+    def IntersectEdge(self):
+        if self.__Wall == RayCast.__WallSide.NS:
+            depth = max(self.__distX - self.__deltaX, 1e-16)
+
+        else: 
+            depth = max(self.__distY - self.__deltaY, 1e-16)
 
